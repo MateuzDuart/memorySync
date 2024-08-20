@@ -68,13 +68,11 @@ function getMainMemories() {
 }
 
 function calcMemory(element1, element2) {
-    element1.parentElement.classList.remove('enabled');
-    element2.parentElement.classList.remove('enabled');
-    element1.parentElement.classList.remove('calculed');
-    element2.parentElement.classList.remove('calculed');
-    element1.parentElement.classList.remove('success');
-    element2.parentElement.classList.remove('success');
     
+    removeClassStatus(element1)
+    removeClassStatus(element2)
+
+
     element2.parentElement.classList.add('enabled');
     element1.parentElement.classList.add('enabled');
 
@@ -93,8 +91,7 @@ function calcMemory(element1, element2) {
     
     let relativeAddress = undefined
     if(entryAddress1 > entryAddress2) {
-        console.log(element1.id)
-        if (element1.id === "memoriaRelativa1") { console.log("aaaa"); relativeAddress = memoryAddress1 - diference }
+        if (element1.id === "memoriaRelativa1") { relativeAddress = memoryAddress1 - diference }
         else { relativeAddress = memoryAddress1 + diference }
     } else if (entryAddress1 < entryAddress2) {
         if (element1.id === "memoriaRelativa1") { relativeAddress = memoryAddress1 + diference }
@@ -104,15 +101,35 @@ function calcMemory(element1, element2) {
         messageElement.style.background = null;
         messageElement.style.borderRadius = null;    
         messageElement.style.color = "#d32f2f";
-        messageElement.textContent = "Os endereços de memorias já são iguais, não precisa de calculo.";
+        messageElement.textContent = "Os endereços de memorias já são iguais, não precisa de cálculo.";
+        return 
     }
     
+    messageElement.style.background = null;
+    messageElement.style.borderRadius = null;    
+    if (relativeAddress < 0) {
+        messageElement.style.color = "#d32f2f";
+        messageElement.textContent = "Parece que você não passou os endereços corretamente.";
+        removeClassStatus(element1)
+        element1.parentElement.classList.add('error');
+        return
+    }
     element2.value = relativeAddress.toString(16)
     element1.classList.remove('enabled');
     element1.classList.add('success');
     element2.parentElement.classList.remove('enabled');
     element2.parentElement.classList.add('calculed');
+    
+    messageElement.style.color = "#00796b";
+    messageElement.textContent = "Cálculo realizado com sucesso";
 
+}
+
+function removeClassStatus(element) {
+    element.parentElement.classList.remove('enabled');
+    element.parentElement.classList.remove('calculed');
+    element.parentElement.classList.remove('success');
+    element.parentElement.classList.remove('error');
 }
 
 memoria1.addEventListener('input', getMainMemories);
