@@ -3,6 +3,7 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
@@ -14,8 +15,25 @@ body {
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+  max-width: 450px;
   width: 100%;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #00796b;
+}
+
+header p {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #555;
 }
 
 form {
@@ -59,6 +77,7 @@ input:focus {
 .input-group.calculed {
   background-color: #f9c356; /* Amarelo claro para inputs que precisam ser preenchidos */
 }
+
 .input-group.enabled {
   background-color: #fff59d; /* Amarelo claro para inputs que precisam ser preenchidos */
 }
@@ -76,4 +95,26 @@ input:focus {
   font-size: 16px;
   color: #d32f2f;
   text-align: center;
+}
+
+footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+footer p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #555;
+}
+
+footer a img {
+  width: 40px;
+  height: 40px;
+  margin: 0 10px;
+  transition: transform 0.3s ease;
+}
+
+footer a img:hover {
+  transform: scale(1.2);
 }

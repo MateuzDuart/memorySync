@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <metacharset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulário Estilizado</title>
+    <meta name="description" content="Ferramenta para calcular a memória relativa entre dois programas na memória, a partir de pontos de entrada em hexadecimal. Primeiro, insira os entry points e o sistema calculará a memória relativa entre os programas.">
+    <meta name="keywords" content="memória, hexadecimal, cálculo, entry points, programação">
+    <meta name="author" content="Seu Nome">
+    <title>Calculadora de Memória Relativa</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
+        <header>
+            <h1>Calculadora de syncronização de memória</h1>
+            <p>Insira os pontos de entrada e o sistema calculará a memória relativa entre os programas na memória.</p>
+        </header>
+        
         <form id="myForm">
             <div class="input-group" id="groupMemoria1">
-                <label for="memoria1">Entry point 1:</label>
+                <label for="memoria1">Memória 1:</label>
                 <input type="text" id="memoria1" name="memoria1" placeholder="Digite a memória 1">
             </div>
             <div class="input-group" id="groupMemoria2">
-                <label for="memoria2">Entry point 2:</label>
+                <label for="memoria2">Memória 2:</label>
                 <input type="text" id="memoria2" name="memoria2" placeholder="Digite a memória 2">
             </div>
             <div class="input-group" id="groupMemoriaRelativa1">
@@ -28,6 +36,17 @@
         </form>
         <p id="message" class="message">Preencha o campo Memória 1 com um endereço de memória em HEX.</p>
     </div>
+
+    <footer>
+        <p>Conecte-se com o criador:</p>
+        <a href="https://github.com/MateuzDuart" target="_blank">
+            <img src="imagens/github.png" alt="GitHub">
+        </a>
+        <a href="https://www.instagram.com/mateuz_u_" target="_blank">
+            <img src="imagens/instagram.png" alt="Instagram">
+        </a>
+    </footer>
+    
     <script src="script.js"></script>
 </body>
 </html>
