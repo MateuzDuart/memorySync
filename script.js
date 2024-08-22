@@ -1,141 +1,256 @@
-
+const formElement = document.getElementById('myForm');
 const messageElement = document.getElementById('message');
-const memoria1 = document.getElementById('memoria1');
-const memoria2 = document.getElementById('memoria2');
-const groupMemoriaRelativa1 = document.getElementById('groupMemoriaRelativa1');
-const groupMemoriaRelativa2 = document.getElementById('groupMemoriaRelativa2');
-const memoriaRelativa1 = document.getElementById('memoriaRelativa1');
-const memoriaRelativa2 = document.getElementById('memoriaRelativa2');
 
-let entryAddress1 = undefined
-let entryAddress2 = undefined
-
-
-// Função para validar o endereço de memória em HEX
 function isValidHex(value) {
     return /^[0-9A-Fa-f]+$/i.test(value.replace("0x", ""));
 }
 
 function isInputValid(Inputelement) {
-    const ContainerInput = Inputelement.parentElement
-    const inputName = ContainerInput.querySelector("label").innerHTML.replace(":", "")
+    const inputName = Inputelement.parentElement.querySelector("label").innerHTML.replace(":", " ")
 
     if (!Inputelement.value.trim()) {
-        ContainerInput.classList.add('enabled');
-        messageElement.textContent = `Preencha o campo ${inputName} com um endereço de memória em HEX.`;
-        return false;
+        throw new Error(`Preencha o campo ${inputName} com um endereço de memória HEX.`)
     }
-
     if (!isValidHex(Inputelement.value)) {
-        ContainerInput.classList.remove('success');
-        ContainerInput.classList.add('error');
-        messageElement.textContent = `O valor inserido em ${inputName} não é um endereço HEX válido.`;
-        return false;
+        throw new Error(`O valor inserido em ${inputName} não é um endereço HEX válido.`)
     }
-
-
-    ContainerInput.classList.remove('error');
-    ContainerInput.classList.add('success');
 
     return true
 }
 
-// Função para atualizar o status dos inputs
-function getMainMemories() {
-    messageElement.style.color = "#d32f2f";
-    messageElement.style.background = null;
-    messageElement.style.borderRadius = null;
-    
-    memoriaRelativa1.disabled = true;
-    memoriaRelativa2.disabled = true;
-    
-    if (!isInputValid(memoria1)) { return }
-    entryAddress1 = parseInt(memoria1.value, 16)
-    memoria2.classList.add('enabled');
-    if (!isInputValid(memoria2)) { return }
-    entryAddress2 = parseInt(memoria2.value, 16)
-    
-    groupMemoriaRelativa1.classList.add('enabled');
-    groupMemoriaRelativa2.classList.add('enabled');
-    memoriaRelativa1.disabled = false;
-    memoriaRelativa2.disabled = false;
-    
-    
-    messageElement.textContent = "Agora preencha um dos campos relativos!";
-    messageElement.style.color = "#ffed50";
-    messageElement.style.background = "rgba(0,0,0,0.7)";
-    messageElement.style.borderRadius = "12px";
+function calculateMemory () {
+
 }
 
-function calcMemory(element1, element2) {
+class MemoryPool {
+    static poolCount = 1
+    static pools = [new MemoryPool(0), new MemoryPool(0)]
     
-    removeClassStatus(element1)
-    removeClassStatus(element2)
-
-
-    element2.parentElement.classList.add('enabled');
-    element1.parentElement.classList.add('enabled');
-
-    if(!entryAddress1 || !entryAddress2) { 
-        messageElement.style.background = null;
-        messageElement.style.borderRadius = null;    
-        messageElement.style.color = "#d32f2f";
-        messageElement.textContent = "Os endereços de memorias não foram enviado corretamente";
-        return
+    constructor(entryPointAddress) {
+        this.entryPointAddress = entryPointAddress
+        this.relativeMemory = null
+        this.ID = MemoryPool.poolCount
+        MemoryPool.poolCount++
     }
-    const diference = Math.abs(entryAddress1 - entryAddress2)
-    
-    if(!isInputValid(element1) && !isInputValid(element2)) { return }
-    
-    const memoryAddress1 = parseInt(element1.value, 16)
-    
-    let relativeAddress = undefined
-    if(entryAddress1 > entryAddress2) {
-        if (element1.id === "memoriaRelativa1") { relativeAddress = memoryAddress1 - diference }
-        else { relativeAddress = memoryAddress1 + diference }
-    } else if (entryAddress1 < entryAddress2) {
-        if (element1.id === "memoriaRelativa1") { relativeAddress = memoryAddress1 + diference }
-        else { relativeAddress = memoryAddress1 - diference }
+
+    init() {
+
+        let div = document.createElement("div");
+        div.classList.add('input-group')
+        div.id = `poolMemory-${this.ID}`
+        div.innerHTML = `
+        <div class="input-container"><label for="memory-${this.ID}">Memória ${this.ID}:</label><input type="text" id="memory-${this.ID}" name="memory-${this.ID}" placeholder="Digite a memória ${this.ID}"></div>
+        <div class="input-container"><label for="relativeMemory-${this.ID}">Memória Relativa ${this.ID}:</label><input type="text" id="relativeMemory-${this.ID}" name="relativeMemory-${this.ID}" placeholder="Digite a memória ${this.ID}" disabled></div>`
+        formElement.appendChild(div)
+        const input = formElement.querySelector(`#memory-${this.ID}`)
+        this.setInputContainer(input.parentElement)
         
-    } else {
-        messageElement.style.background = null;
-        messageElement.style.borderRadius = null;    
-        messageElement.style.color = "#d32f2f";
-        messageElement.textContent = "Os endereços de memorias já são iguais, não precisa de cálculo.";
-        return 
+        let debounceTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer); 
+            debounceTimer = setTimeout(() => {
+                this.setEntrypoint(input);
+            }, 200);
+        })
+    }
+
+    setEntrypoint(Inputelement) {
+        MemoryPool.removeEntrypointClasses(this)
+        
+        try {
+            isInputValid(Inputelement)
+        } catch (error) {
+            messageElement.innerHTML = error.message
+            this.setEntrypointError()
+            this.entryPointAddress = 0
+            if(MemoryPool.pools[this.ID]) { MemoryPool.removeEntrypointClasses(MemoryPool.pools[this.ID]) }
+            this.unsetRelativeMemoryEnable()
+            return MemoryPool.removeSuccessState(this)
+            
+        }
+        
+        this.setEntrypointSuccess()
+        const nextMemoryPool = MemoryPool.pools[this.ID]
+        if(nextMemoryPool && nextMemoryPool.entryPointAddress === 0) { MemoryPool.pools[this.ID].setEntrypointEnable() }
+        this.setParcialSuccess()
+        this.entryPointAddress = Inputelement.value
+        const successfulPools = MemoryPool.pools.filter(pool => pool.entryPointAddress !== 0);
+
+        if(successfulPools.length >= 2) {
+            successfulPools.forEach((pool) => {
+                pool.initRelativeMemory()
+            })
+            messageElement.innerHTML = ""
+        }
+    }
+
+    setRelativeMemory(Inputelement) {
+        try {
+            isInputValid(Inputelement)
+        } catch (error) {
+            messageElement.innerHTML = error.message
+            this.setRelativeMemoryError()
+            this.relativeMemory = null
+            return this.setRelativeMemoryError()
+        }
+        
+        this.relativeMemory = Inputelement.value
+        this.setRelativeMemorySuccess()
+        
+        const otherPools = MemoryPool.pools.filter((pool) => pool.ID != this.ID)
+        
+        const difference = this.getDifference()
+        otherPools.forEach((pool) => {
+            pool.setRelativeMemoryCalculated()
+            pool.setCalculatedSuccess()
+            pool.updateRelativeMemory(difference)
+
+            messageElement.style.color = "#00796b";
+            messageElement.textContent = "Cálculo realizado com sucesso";
+        })
+        this.setFullySuccess()
+    }
+
+    initRelativeMemory() {
+        MemoryPool.removeEntrypointClasses(this)
+        this.setRelativeMemoryEnable()
+
+
+        const input = this.inputContainer.parentElement.querySelector("div:nth-child(2) > input")
+        let debounceTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer); 
+            debounceTimer = setTimeout(() => {
+                this.setRelativeMemory(input);
+            }, 200);
+        })
+        
     }
     
-    messageElement.style.background = null;
-    messageElement.style.borderRadius = null;    
-    if (relativeAddress < 0) {
-        messageElement.style.color = "#d32f2f";
-        messageElement.textContent = "Parece que você não passou os endereços corretamente.";
-        removeClassStatus(element1)
-        element1.parentElement.classList.add('error');
-        return
+    setEntrypointEnable() {
+        MemoryPool.removeEntrypointClasses(this)
+        this.inputContainer.classList.add("enabled")
     }
-    element2.value = relativeAddress.toString(16)
-    element1.classList.remove('enabled');
-    element1.classList.add('success');
-    element2.parentElement.classList.remove('enabled');
-    element2.parentElement.classList.add('calculed');
     
-    messageElement.style.color = "#00796b";
-    messageElement.textContent = "Cálculo realizado com sucesso";
+    setEntrypointSuccess() {
+        MemoryPool.removeEntrypointClasses(this)
+        this.inputContainer.classList.add("success")
+        
+    }
+    
+    setEntrypointError() {
+        MemoryPool.removeEntrypointClasses(this)
+        this.inputContainer.classList.add("error")
 
+    }
+    
+    unsetRelativeMemoryEnable() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        
+        const input = this.inputContainer.parentElement.querySelector("div:nth-child(2) > input")
+        input.disabled = true
+
+        let debounceTimer;
+        input.removeEventListener('input', () => {
+            clearTimeout(debounceTimer); 
+            debounceTimer = setTimeout(() => {
+                this.setRelativeMemory(input);
+            }, 200);
+        })
+    }
+    
+    setRelativeMemoryEnable() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        const inputGroupElement = this.inputContainer.parentElement.querySelector("div:nth-child(2)")
+        inputGroupElement.classList.add("enabled")
+        inputGroupElement.querySelector("input").disabled = false
+    }
+
+    setRelativeMemorySuccess() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        this.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.add("success")  
+    }
+    
+    setRelativeMemoryError() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        MemoryPool.removeSuccessState(this)
+        this.setParcialSuccess()
+        this.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.add("error")
+    }
+
+    setRelativeMemoryCalculated() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        this.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.add("calculated")
+    }
+    
+    setInputContainer (inputElement) {
+        this.inputContainer = inputElement
+    } 
+    
+    setParcialSuccess() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        MemoryPool.removeSuccessState(this)
+        this.inputContainer.parentElement.classList.add("parcial-success")
+    }
+
+    setFullySuccess() {
+        MemoryPool.removeRelativeMemoryClasses(this)
+        MemoryPool.removeSuccessState(this)
+        this.inputContainer.parentElement.classList.add("fully-success")
+    }
+
+    setCalculatedSuccess() {
+        MemoryPool.removeSuccessState(this)
+        this.inputContainer.parentElement.classList.add("calculated-success")
+    }
+    
+    getDifference() {
+        return parseInt(this.relativeMemory, 16) - parseInt(this.entryPointAddress, 16)
+    }
+
+    updateRelativeMemory(difference) {
+        const input = this.inputContainer.parentElement.querySelector("div:nth-child(2) > input")
+        input.value = "0x" + (parseInt(this.entryPointAddress, 16) + difference).toString(16)
+    }
+
+    static removeEntrypointClasses(pool) {
+        if(!pool.inputContainer) { return }
+        pool.inputContainer.classList.remove("enabled")
+        pool.inputContainer.classList.remove("success")
+        pool.inputContainer.classList.remove("error")
+    }
+
+    static removeSuccessState(pool) {
+        if(!pool.inputContainer) { return }
+        pool.inputContainer.parentElement.classList.remove("parcial-success")
+        pool.inputContainer.parentElement.classList.remove("fully-success")
+        pool.inputContainer.parentElement.classList.remove("calculated-success")
+    }
+
+    static removeRelativeMemoryClasses(pool) {
+        if(!pool.inputContainer) { return }
+        pool.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.remove("enabled")
+        pool.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.remove("success")
+        pool.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.remove("error")
+        pool.inputContainer.parentElement.querySelector("div:nth-child(2)").classList.remove("calculated")
+    }
+
+    static renderPools() {
+        for (const pool of this.pools) {
+            pool.init()
+            
+            if(pool.ID === 1) {
+                pool.setEntrypointEnable()
+            }
+
+            
+        }
+    }
+
+    
+    
 }
 
-function removeClassStatus(element) {
-    element.parentElement.classList.remove('enabled');
-    element.parentElement.classList.remove('calculed');
-    element.parentElement.classList.remove('success');
-    element.parentElement.classList.remove('error');
-}
 
-memoria1.addEventListener('input', getMainMemories);
-memoria2.addEventListener('input', getMainMemories);
-memoriaRelativa1.addEventListener('input', () => calcMemory(memoriaRelativa1, memoriaRelativa2));
-memoriaRelativa2.addEventListener('input', () => calcMemory(memoriaRelativa2, memoriaRelativa1));
 
-// Inicializa o primeiro input
-document.getElementById('groupMemoria1').classList.add('enabled');
+MemoryPool.renderPools()
